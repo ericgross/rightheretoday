@@ -1,0 +1,11 @@
+h1 Nearby
+
+= form_tag nearby_index_path, method: :get
+  = label_tag 'location'
+  = text_field_tag 'location', '40.713938,-73.9790146'
+  = submit_tag 'go'
+
+div.nearby
+  - @results.each do |tweet|
+    div.item
+      == Twitter::Autolink::auto_link tweet.full_text
