@@ -9,16 +9,27 @@ div.nearby
   div#card-holder
 
 javascript:
-  var source = new EventSource('/messaging');
+  var geo = $('#location')[0];
+  var url = '/messaging';
+
+  if (geo) {
+    var lat = geo.value.split(',')[0];
+    var lng = geo.value.split(',')[1];
+    url += '?lat=' + lat + '&lng=' + lng;
+  }
+
+  var source = new EventSource(url);
 
   source.addEventListener('message', function(e) {
-    //console.log(e.data);
     var data = JSON.parse(e.data);
 
     var card = document.createElement('div');
     card.className = 'card';
-    card.className += " score-" + data.score
-    card.setAttribute('data-score', data.score)
+    if (data.score) {
+      card.setAttribute('data-score', data.score);
+      card.setAttribute('data-distance', Math.round(data.distance));
+    }
+
     var node = document.createTextNode(data.text);
     card.appendChild(node);
     var cardHolder = document.getElementById('card-holder');
@@ -26,7 +37,7 @@ javascript:
       var firstElement = cardHolder.childNodes[0];
     }
     cardHolder.insertBefore(card, firstElement);
-    $('.card').tsort('',{data:'score', order:'desc'});
+    $('.card').tsort('',{data:'distance', order:'asc'});
   }, false);
 
   source.addEventListener('open', function(e) {

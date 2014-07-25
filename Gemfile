@@ -19,7 +19,7 @@ gem 'spring',      group: :development
 # Use debugger
 # gem 'debugger', group: [:development, :test]
 
-gem 'twitter'
+gem 'tweetstream'
 gem 'twitter-text'
 
 gem 'slim'
@@ -28,6 +28,8 @@ gem 'pry-rails'
 
 gem 'puma'
 gem 'redis'
+
+gem 'geokit'
 
 gem 'jquery-rails'
 

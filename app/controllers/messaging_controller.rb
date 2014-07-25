@@ -1,31 +1,63 @@
 class MessagingController < ApplicationController
   include ActionController::Live
+  require 'tweetstream'
 
   def send_message
     response.headers['Content-Type'] = 'text/event-stream'
 
-    client = Twitter::Streaming::Client.new do |config|
-      config.consumer_secret = "IbqCk0VOjgo8G1SOiTt25U6B470986N4rGRHitSjg97ASMdz6v"
-      config.consumer_key    = "wU8W1AIcKGaPWFxRbrnbUkiA4"
-      config.access_token = "16500296-CMk2BzxkYBzLl7aXTyfzG9lc6usc6d8pdO0xzfysC"
-      config.access_token_secret = "ay4av6fQN1kZ3oEJ7OqCzfBDTnliGrs4X8VSoZpkFrwkr"
+    client = TweetStream::Client.new
+
+    if params[:lat]
+      start = Geokit::LatLng.new(params[:lat].to_f, params[:lng].to_f)
+    else
+      start = Geokit::LatLng.new(40.713938, -73.9790146)
     end
 
-    start = {lat: 40.713938, lng: -73.9790146}
-    box_size = 0.1
-    box = [start[:lng] - box_size, start[:lat] - box_size, start[:lng] + box_size, start[:lat] + box_size]
-    client.filter(locations: box.join(',')) do |object|
-      if object.is_a?(Twitter::Tweet)
-        store_tweet(object)
-        score = tweet_score(object)
-        object_data = {text: "#{score} #{object.text}", score: tweet_score(object)}
-        response.stream.write "data: #{object_data.to_json}\nretry: 10000\n\n"
-      else
-        response.stream.write "data: #{object.inspect.to_json}\nretry: 10000\n\n"
+    box_size = 1
+    box = [start.lng - box_size, start.lat - box_size, start.lng + box_size, start.lat + box_size]
+
+    puts "Starting stream for #{box}"
+
+    EM.run do
+
+      client.on_error do |error|
+        puts "TweetStreem Error: #{error}"
       end
+
+      client.locations(box) do |object|
+        begin
+          if object.is_a?(Twitter::Tweet)
+            store_tweet(object)
+            score = tweet_score(object)
+            location = Geokit::LatLng.new(object.geo.lat, object.geo.long)
+            distance = start.distance_to(location)
+
+            object_data = {
+              text: "#{score} : #{distance} : #{object.text}",
+              distance: distance,
+              score: tweet_score(object),
+            }
+
+            puts object_data.inspect
+            response.stream.write "data: #{object_data.to_json}\nretry: 10000\n\n"
+          else
+            response.stream.write "data: #{object.inspect.to_json}\nretry: 10000\n\n"
+          end
+        rescue => error
+          puts "Error in stream: #{error.message}: #{error.backtrace}"
+          response.stream.close
+        end
+      end
+
     end
 
+  rescue => error
+    binding.pry
   ensure
+    begin
+      client.stop if client
+    rescue
+    end
     response.stream.close
   end
 
