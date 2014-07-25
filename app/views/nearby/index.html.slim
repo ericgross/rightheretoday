@@ -1,11 +1,35 @@
 h1 Nearby
 
 = form_tag nearby_index_path, method: :get
-  = label_tag 'location'
-  = text_field_tag 'location', '40.713938,-73.9790146'
-  = submit_tag 'go'
+= label_tag 'location'
+= text_field_tag 'location', '40.713938,-73.9790146'
+= submit_tag 'go'
 
 div.nearby
-  - @results.each do |tweet|
-    div.item
-      == Twitter::Autolink::auto_link tweet.full_text
+  div#card-holder
+
+javascript:
+  var source = new EventSource('/messaging');
+
+  source.addEventListener('message', function(e) {
+    console.log(e.data);
+    var card = document.createElement('p');
+    var node = document.createTextNode(e.data);
+    card.appendChild(node);
+    var cardHolder = document.getElementById('card-holder');
+    if (cardHolder && cardHolder.hasChildNodes()) {
+      var firstElement = cardHolder.childNodes[0];
+    }
+    cardHolder.insertBefore(card, firstElement);
+  }, false);
+
+  source.addEventListener('open', function(e) {
+    // Connection was opened.
+  }, false);
+
+  source.addEventListener('error', function(e) {
+    if (e.readyState == EventSource.CLOSED) {
+    // Connection was closed.
+    }
+   }, false);
+

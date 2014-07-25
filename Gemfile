@@ -19,13 +19,14 @@ gem 'spring',      group: :development
 # Use debugger
 # gem 'debugger', group: [:development, :test]
 
-gem 'thin'
 gem 'twitter'
 gem 'twitter-text'
 
 gem 'slim'
 gem 'pry'
 gem 'pry-rails'
+
+gem 'puma'
 
 group :development do
     gem "better_errors"
