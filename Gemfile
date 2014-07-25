@@ -27,6 +27,9 @@ gem 'pry'
 gem 'pry-rails'
 
 gem 'puma'
+gem 'redis'
+
+gem 'jquery-rails'
 
 group :development do
     gem "better_errors"

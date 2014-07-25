@@ -12,15 +12,21 @@ javascript:
   var source = new EventSource('/messaging');
 
   source.addEventListener('message', function(e) {
-    console.log(e.data);
-    var card = document.createElement('p');
-    var node = document.createTextNode(e.data);
+    //console.log(e.data);
+    var data = JSON.parse(e.data);
+
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.className += " score-" + data.score
+    card.setAttribute('data-score', data.score)
+    var node = document.createTextNode(data.text);
     card.appendChild(node);
     var cardHolder = document.getElementById('card-holder');
     if (cardHolder && cardHolder.hasChildNodes()) {
       var firstElement = cardHolder.childNodes[0];
     }
     cardHolder.insertBefore(card, firstElement);
+    $('.card').tsort('',{data:'score', order:'desc'});
   }, false);
 
   source.addEventListener('open', function(e) {
