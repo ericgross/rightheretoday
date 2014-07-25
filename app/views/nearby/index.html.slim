@@ -25,6 +25,8 @@ javascript:
 
     var card = document.createElement('div');
     card.className = 'card';
+    card.style.backgroundColor = 'rgb(255,255,' + (255 - data.score) + ')';
+
     if (data.score) {
       card.setAttribute('data-score', data.score);
       card.setAttribute('data-distance', Math.round(data.distance));
@@ -32,6 +34,7 @@ javascript:
 
     var node = document.createTextNode(data.text);
     card.appendChild(node);
+
     var cardHolder = document.getElementById('card-holder');
     if (cardHolder && cardHolder.hasChildNodes()) {
       var firstElement = cardHolder.childNodes[0];

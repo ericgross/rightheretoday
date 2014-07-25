@@ -30,12 +30,17 @@ class MessagingController < ApplicationController
             store_tweet(object)
             score = tweet_score(object)
             location = Geokit::LatLng.new(object.geo.lat, object.geo.long)
-            distance = start.distance_to(location)
+            distance = start.distance_to(location).round(1)
+
+            word_scores = words_with_scores(object)
+            scores = word_scores.inject({}) { |acc, val| acc[val[:score].to_i] = val[:word]; acc }
+            max_word = scores[scores.keys.max]
 
             object_data = {
-              text: "#{score} : #{distance} : #{object.text}",
+              text: "#{score} (#{max_word}) : #{distance} : #{object.text}",
               distance: distance,
               score: tweet_score(object),
+              word_scores: word_scores,
             }
 
             puts object_data.inspect
@@ -68,16 +73,31 @@ class MessagingController < ApplicationController
   def store_tweet(tweet)
     redis.pipelined do
       tweet.text.split(' ').each do |word|
-        redis.incr("word:#{word}")
+        key = "word:#{word}"
+        redis.incr(key)
+        redis.expire(key, 300)
+      end
+    end
+  end
+
+  def tweet_words(tweet)
+    tweet.text.split(' ')
+  end
+
+  def words_with_scores(tweet)
+    scores = word_scores(tweet)
+    tweet_words(tweet).reject{|word| word.length < 4}.each_with_index.map{ |word, index| {word: word, score: scores[index] }}
+  end
+
+  def word_scores(tweet)
+    redis.pipelined do
+      tweet_words(tweet).reject{|word| word.length < 4}.each do |word|
+        redis.get("word:#{word}")
       end
     end
   end
 
   def tweet_score(tweet)
-    redis.pipelined do
-      tweet.text.split(' ').reject{|word| word.length < 4}.each do |word|
-        redis.get("word:#{word}")
-      end
-    end.max
+    word_scores(tweet).max
   end
 end
